@@ -1,0 +1,33 @@
+name: Destroy Dev Environment
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Environment name
+        id: env
+        run: echo "name=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+
+      - name: Checkout mydomain environments
+        uses: actions/checkout@v4
+        with:
+          repository: mydomain/mydomain-environments
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Terraform destroy
+        run: |
+          cd infra-aws/env
+          terraform init
+          terraform destroy -auto-approve \
+            -var "env_name=${{ steps.env.outputs.name }}"
+
+      - name: Remove descriptor file
+        run: |
+          rm -f envs/${{ steps.env.outputs.name }}.yaml
+          git add .
+          git commit -m "Destroy env" || true
+          git push
