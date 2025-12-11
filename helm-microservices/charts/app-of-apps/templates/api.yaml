@@ -1,0 +1,27 @@
+{{- if (include "app-of-apps.hasService" (list "api" .Values.global.services.enabled) | eq "true") }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ printf "%s-api" .Values.global.envName }}
+spec:
+  project: dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev-{{ .Values.global.envName }}
+  source:
+    repoURL: git@github.com:mydomain/helm-microservices.git
+    targetRevision: main
+    path: charts/api
+    helm:
+      values: |
+        global:
+          envName: {{ .Values.global.envName }}
+          domain: {{ .Values.global.domain }}
+          aws:
+            s3Bucket: {{ .Values.global.aws.s3Bucket }}
+            sqsPrefix: {{ .Values.global.aws.sqsPrefix }}
+          db:
+            mode: {{ .Values.global.db.mode }}
+          redis:
+            mode: {{ .Values.global.redis.mode }}
+{{- end }}

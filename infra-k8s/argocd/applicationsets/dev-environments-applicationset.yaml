@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: dev-environments
+spec:
+  generators:
+    - git:
+        repoURL: git@github.com:mydomain/mydomain-environments.git
+        revision: main
+        files:
+          - path: "envs/*.yaml"
+
+  template:
+    metadata:
+      name: '{{ envName }}'
+    spec:
+      project: dev
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'dev-{{ envName }}'
+      source:
+        repoURL: git@github.com:mydomain/helm-microservices.git
+        targetRevision: main
+        path: charts/app-of-apps
+        helm:
+          values: |
+            global:
+              envName: {{ envName }}
+              domain: {{ envName }}.staging.mydomain.dev
+
+              db:
+                mode: {{ db_mode }}
+              redis:
+                mode: {{ redis_mode }}
+
+              aws:
+                s3Bucket: {{ envName }}
+                sqsPrefix: {{ envName }}
+
+              services:
+                enabled: {{ services | toJson }}

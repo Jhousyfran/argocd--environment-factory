@@ -1,0 +1,60 @@
+name: Create Dev Environment
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
+    inputs:
+      env_name:
+        required: true
+
+jobs:
+  create-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine env name
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "name=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+          else
+            echo "name=${{ github.inputs.env_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Clone mydomain environments repo
+        uses: actions/checkout@v4
+        with:
+          repository: mydomain/mydomain-environments
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Create environment descriptor
+        run: |
+          ENV_NAME=${{ steps.env.outputs.name }}
+          cat <<EOF > envs/${ENV_NAME}.yaml
+          envName: ${ENV_NAME}
+          branch: ${ENV_NAME}
+          services:
+            - api
+            - billing
+            - auth
+          db_mode: pod
+          redis_mode: pod
+          ttl_days: 3
+          created_at: "$(date -Iseconds)"
+          EOF
+
+      - name: Commit and push
+        run: |
+          git config --global user.name "mydomain-bot"
+          git config --global user.email "mydomain@mydomain.dev"
+          git add .
+          git commit -m "Create env $ENV_NAME" || true
+          git push
+
+      - name: Terraform Init
+        run: cd infra-aws/env && terraform init
+
+      - name: Terraform Apply
+        run: cd infra-aws/env && terraform apply -auto-approve \
+          -var "env_name=${{ steps.env.outputs.name }}" \
+          -var "services=[\"api\",\"billing\",\"auth\"]"

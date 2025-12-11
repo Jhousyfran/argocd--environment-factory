@@ -1,0 +1,22 @@
+envName: feature-xyz
+branch: feature-xyz
+
+services:
+  - api
+  - billing
+  - auth
+
+db_mode: pod           # pod | rds
+redis_mode: pod        # pod | shared
+
+ttl_days: 3
+created_at: "2025-01-18T12:00:00Z"
+
+aws:
+  create_s3: true
+  create_sqs: true
+  create_dns: true
+
+vault:
+  path_reference: secret/data/reference
+  path_env: secret/data/envs/feature-xyz

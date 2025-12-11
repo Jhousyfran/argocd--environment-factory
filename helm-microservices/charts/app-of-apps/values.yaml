@@ -1,0 +1,19 @@
+global:
+  envName: "example"
+  domain: "example.staging.mydomain.dev"
+
+  db:
+    mode: "pod" # pod | rds
+
+  redis:
+    mode: "pod"
+
+  aws:
+    s3Bucket: "mydomain-dev-example"
+    sqsPrefix: "example"
+
+  services:
+    enabled:
+      - api
+      - billing
+      - auth

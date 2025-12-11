@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  labels:
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: APP_ENV_NAME
+              value: {{ .Values.global.envName | quote }}
+            - name: APP_DOMAIN
+              value: {{ .Values.global.domain | quote }}
+            - name: S3_BUCKET
+              value: {{ .Values.global.aws.s3Bucket | quote }}
+            - name: SQS_PREFIX
+              value: {{ .Values.global.aws.sqsPrefix | quote }}
+            - name: DB_MODE
+              value: {{ .Values.global.db.mode | quote }}
+            - name: REDIS_MODE
+              value: {{ .Values.global.redis.mode | quote }}
+          ports:
+            - containerPort: 8080
